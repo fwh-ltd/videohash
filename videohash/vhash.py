@@ -101,14 +101,14 @@ def collage_maker(image_dir, task_dir, collage_image_width):
     collage_image.save(join(task_dir, "collage.jpeg"))
 
 
-def hash_manager(collage, image_hash=None, size=8):
+def hash_manager(collage, image_hash=None, hash_size=8):
     """
     Use the imagehash algorithm passed by the client.
     """
     img = Image.open(collage)
 
     if image_hash == "phash":
-        hash = imagehash.phash(img, hash_size=size)
+        hash = imagehash.phash(img, hash_size=hash_size)
     elif image_hash == "dhash":
         hash = imagehash.dhash(img)
     elif image_hash == "whash":
