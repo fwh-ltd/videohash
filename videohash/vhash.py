@@ -101,14 +101,14 @@ def collage_maker(image_dir, task_dir, collage_image_width):
     collage_image.save(join(task_dir, "collage.jpeg"))
 
 
-def hash_manager(collage, image_hash=None):
+def hash_manager(collage, image_hash=None, size=8):
     """
     Use the imagehash algorithm passed by the client.
     """
     img = Image.open(collage)
 
     if image_hash == "phash":
-        hash = imagehash.phash(img)
+        hash = imagehash.phash(img, hash_size=size)
     elif image_hash == "dhash":
         hash = imagehash.dhash(img)
     elif image_hash == "whash":
@@ -142,7 +142,7 @@ def task_uid_dir():
     return (task_uid, task_dir)
 
 
-def from_url(input_url, image_hash=None):
+def from_url(input_url, image_hash=None, hash_size=8):
     """
     download the video as input_url using YouTube-dl
     and calculate the hash.
@@ -152,7 +152,7 @@ def from_url(input_url, image_hash=None):
     downloaded_file = download(input_url, output_file, task_dir, task_uid)
     input_file = join(task_dir, downloaded_file)
     return from_path(
-        input_file, task_uid=task_uid, task_dir=task_dir, image_hash=image_hash
+        input_file, task_uid=task_uid, task_dir=task_dir, image_hash=image_hash, hash_size=hash_size
     )
 
 
@@ -169,7 +169,7 @@ def compressor(input_file, task_dir, task_uid):
     return output_file
 
 
-def from_path(input_file, task_uid=None, task_dir=None, image_hash=None):
+def from_path(input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=8):
     """
     calculate videohash of file at absolute path input_file.
     from_url relies upon this function to do the main job after downloading
@@ -198,6 +198,6 @@ def from_path(input_file, task_uid=None, task_dir=None, image_hash=None):
     frames(input_file, image_prefix)
     collage_maker(image_dir, task_dir, 800)
     collage = join(task_dir, "collage.jpeg")
-    _hash = hash_manager(collage, image_hash=image_hash)
+    _hash = hash_manager(collage, image_hash=image_hash, hash_size)
     shutil.rmtree(working_temp_dir)
     return _hash
