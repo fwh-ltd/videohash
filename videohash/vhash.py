@@ -101,12 +101,13 @@ def collage_maker(image_dir, task_dir, collage_image_width):
     collage_image.save(join(task_dir, "collage.jpeg"))
 
 
-def hash_manager(collage, image_hash=None, hash_size=8):
+def hash_manager(collage, image_hash=None, hash_size=None):
     """
     Use the imagehash algorithm passed by the client.
     """
     img = Image.open(collage)
-
+    if hash_size == None:
+        hash_size = 8
     if image_hash == "phash":
         hash = imagehash.phash(img, hash_size=hash_size)
     elif image_hash == "dhash":
@@ -142,7 +143,7 @@ def task_uid_dir():
     return (task_uid, task_dir)
 
 
-def from_url(input_url, image_hash=None, hash_size=8):
+def from_url(input_url, image_hash=None, hash_size=None):
     """
     download the video as input_url using YouTube-dl
     and calculate the hash.
@@ -169,7 +170,7 @@ def compressor(input_file, task_dir, task_uid):
     return output_file
 
 
-def from_path(input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=8):
+def from_path(input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=None):
     """
     calculate videohash of file at absolute path input_file.
     from_url relies upon this function to do the main job after downloading
