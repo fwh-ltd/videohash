@@ -198,6 +198,6 @@ def from_path(input_file, task_uid=None, task_dir=None, image_hash=None, hash_si
     frames(input_file, image_prefix)
     collage_maker(image_dir, task_dir, 800)
     collage = join(task_dir, "collage.jpeg")
-    _hash = hash_manager(collage, image_hash=image_hash, hash_size)
+    _hash = hash_manager(collage, image_hash=image_hash, hash_size=hash_size)
     shutil.rmtree(working_temp_dir)
     return _hash
