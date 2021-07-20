@@ -10,7 +10,7 @@ import tempfile
 from os.path import join
 from .exceptions import DownloadFailed
 
-working_temp_dir = join(tempfile.mkdtemp(), "files/")
+# working_temp_dir = join(tempfile.mkdtemp(), "files/")
 
 
 def download(input_url, output_file, task_dir, task_uid):
@@ -124,7 +124,7 @@ def hash_manager(collage, image_hash=None, hash_size=None):
     return hash
 
 
-def task_uid_dir():
+def task_uid_dir(root_dir):
     """
     Create a 12 digits unique task id.
     The task id ensure that we are not messing
@@ -138,17 +138,17 @@ def task_uid_dir():
         sys_random.choice("abcdefghijklmnopqrstuvwxyz" + "0123456789")
         for _ in range(12)
     )
-    task_dir = join(working_temp_dir, task_uid + "/")
+    task_dir = join(root_dir, task_uid + "/")
     Path(task_dir).mkdir(parents=True, exist_ok=True)
     return (task_uid, task_dir)
 
 
-def from_url(input_url, image_hash=None, hash_size=None):
+def from_url(root_dir, input_url, image_hash=None, hash_size=None):
     """
     download the video as input_url using YouTube-dl
     and calculate the hash.
     """
-    task_uid, task_dir = task_uid_dir()
+    task_uid, task_dir = task_uid_dir(root_dir)
     output_file = join(task_dir, task_uid + ".%(ext)s")
     downloaded_file = download(input_url, output_file, task_dir, task_uid)
     input_file = join(task_dir, downloaded_file)
@@ -170,7 +170,7 @@ def compressor(input_file, task_dir, task_uid):
     return output_file
 
 
-def from_path(input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=None):
+def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=None):
     """
     calculate videohash of file at absolute path input_file.
     from_url relies upon this function to do the main job after downloading
@@ -185,7 +185,7 @@ def from_path(input_file, task_uid=None, task_dir=None, image_hash=None, hash_si
         )
 
     if not task_uid or not task_dir:
-        task_uid, task_dir = task_uid_dir()
+        task_uid, task_dir = task_uid_dir(root_dir)
     image_dir = join(task_dir, "frames/")
     Path(image_dir).mkdir(parents=True, exist_ok=True)
     image_prefix = join(image_dir, task_uid)
@@ -200,5 +200,4 @@ def from_path(input_file, task_uid=None, task_dir=None, image_hash=None, hash_si
     collage_maker(image_dir, task_dir, 800)
     collage = join(task_dir, "collage.jpeg")
     _hash = hash_manager(collage, image_hash=image_hash, hash_size=hash_size)
-    shutil.rmtree(working_temp_dir)
     return _hash
