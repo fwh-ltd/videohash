@@ -159,9 +159,10 @@ def from_url(root_dir, input_url, image_hash=None, hash_size=None):
 
 def compressor(input_file, task_dir, task_uid):
     # APPLY : ffmpeg -i input.webm -s 64x64 -r 30  output.mp4
+    # command = 'ffmpeg -ss {start} -t {time} -i {input_file} -an -vf scale=512:-1 -preset ultrafast {output_file}'.format(
 
     output_file = join(task_dir, task_uid + "compressed.mp4")
-    command = "ffmpeg -i {input_file} -s 512x512 -r 30 {output_file}".format(
+    command = "ffmpeg -i {input_file} -s 512x512 -r 30 -an -preset ultrafast {output_file}".format(
         input_file=input_file, output_file=output_file
     )
     process = Popen(command.split(), stdout=DEVNULL, stderr=STDOUT)
