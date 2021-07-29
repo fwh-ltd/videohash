@@ -195,7 +195,7 @@ def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=Non
     # 64 x 64 resolution at 30 fps
     # and assign output as input_file, mp4 is consistency and small size improves
     # speed.
-    input_file = compressor(input_file, task_dir, task_uid)
+    # input_file = compressor(input_file, task_dir, task_uid)
 
     frames(input_file, image_prefix)
     collage_maker(image_dir, task_dir, 800)
