@@ -37,6 +37,8 @@ sudo apt install ffmpeg
 sudo snap install ffmpeg
 ```
 
+You must also have [phashes](http://www.fmwconcepts.com/imagemagick/phashes/index.php) installed.
+
 ###### Windows
 Steps are [based on video.stackexchange.com/a/20496](https://video.stackexchange.com/a/20496), please note that the download site is outdated as of January 2021.
   - Download the `release full` variant from <https://www.gyan.dev/ffmpeg/builds/>. You can download any variant you want, but I prefer the full release.
