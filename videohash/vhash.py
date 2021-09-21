@@ -223,7 +223,7 @@ def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=Non
     collage_maker(image_dir, task_dir, 800)
     if aggregate:
         collage = join(task_dir, "collage.jpeg")
-        _hash = hash_manager(collage, image_hash=image_hash, hash_size=hash_size, aggregaate=aggregate)
+        _hash = hash_manager(collage, image_hash=image_hash, hash_size=hash_size, aggregate=aggregate)
     else:
         _hash = hash_manager(image_dir, image_hash=image_hash, hash_size=hash_size, aggregate=aggregate)
     return _hash
