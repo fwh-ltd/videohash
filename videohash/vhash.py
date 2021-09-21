@@ -99,28 +99,50 @@ def collage_maker(image_dir, task_dir, collage_image_width):
         j += 1
     collage_image.save(join(task_dir, "collage.jpeg"))
 
+def phash(dir):
+    return "HELLO"
 
-def hash_manager(collage, image_hash=None, hash_size=None):
+def hash_manager(ipath, image_hash=None, hash_size=None, aggregate=True):
     """
     Use the imagehash algorithm passed by the client.
     """
-    img = Image.open(collage)
-    if hash_size == None:
-        hash_size = 8
-    if image_hash == "phash":
-        hash = imagehash.phash(img, hash_size=hash_size)
-    elif image_hash == "dhash":
-        hash = imagehash.dhash(img)
-    elif image_hash == "whash":
-        hash = imagehash.whash(img)
-    elif image_hash == "colorhash":
-        hash = imagehash.colorhash(img)
-    elif image_hash == "crop_resistant_hash":
-        hash = imagehash.crop_resistant_hash(img)
-    else:
-        hash = imagehash.average_hash(img)
 
-    return hash
+    hashes = []
+    images = []
+    if aggregate:
+        images.append(ipath)
+    else:
+        images = [f for f in os.listdir(ipath) if os.path.isfile(os.path.join(ipath, f))]
+
+    for img in images:
+        if hash_size == None:
+            hash_size = 8
+        if image_hash == "phash":
+            hash = imagehash.phash(Image.open(img), hash_size=hash_size)
+        elif image_hash == "dhash":
+            hash = imagehash.dhash(Image.open(img))
+        elif image_hash == "whash":
+            hash = imagehash.whash(Image.open(img))
+        elif image_hash == "colorhash":
+            hash = imagehash.colorhash(Image.open(img))
+        elif image_hash == "crop_resistant_hash":
+            hash = imagehash.crop_resistant_hash(Image.open(img))
+        elif image_hash == "bmh":
+            hash = phash(img, "bmh", dir)
+        elif image_hash == "bdh":
+            hash = phash(img, "bdh", dir)
+        elif image_hash == "avh":
+            hash = phash(img, "avh", dir)
+        elif image_hash == "pfh":
+            hash = phash(img, "pfh", dir)
+        else:
+            hash = imagehash.average_hash(Image.open(img))
+        hashes.append(hash)
+
+    if aggregate:
+        return hashes[0]
+    else:
+        return hashes
 
 
 def task_uid_dir(root_dir):
@@ -170,7 +192,7 @@ def compressor(input_file, task_dir, task_uid):
     return output_file
 
 
-def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=None, collage=True):
+def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=None, aggregate=True):
     """
     calculate videohash of file at absolute path input_file.
     from_url relies upon this function to do the main job after downloading
@@ -197,7 +219,11 @@ def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=Non
     # input_file = compressor(input_file, task_dir, task_uid)
 
     frames(input_file, image_prefix, frame_rate=1)
+
     collage_maker(image_dir, task_dir, 800)
-    collage = join(task_dir, "collage.jpeg")
-    _hash = hash_manager(collage, image_hash=image_hash, hash_size=hash_size)
+    if aggregate:
+        collage = join(task_dir, "collage.jpeg")
+        _hash = hash_manager(collage, image_hash=image_hash, hash_size=hash_size, aggregaate=aggregate)
+    else:
+        _hash = hash_manager(image_dir, image_hash=image_hash, hash_size=hash_size, aggregate=aggregate)
     return _hash
