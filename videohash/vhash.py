@@ -57,7 +57,7 @@ def frames(input_file, output_prefix, frame_rate=1):
     Export frames as images at output_prefix as a 7 digit padded jpeg file.
     """
     command = "ffmpeg -i {input_file} -r {frame_rate} {output_prefix}_%07d.jpeg".format(
-        input_file=input_file, frame_rate=frame_rate output_prefix=output_prefix
+        input_file=input_file, frame_rate=frame_rate, output_prefix=output_prefix
     )
     process = Popen(command.split(), stdout=DEVNULL, stderr=STDOUT)
     output, error = process.communicate()
