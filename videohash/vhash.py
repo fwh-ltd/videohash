@@ -52,13 +52,12 @@ def download(input_url, output_file, task_dir, task_uid):
         % (process.returncode, output.decode(), error.decode())
     )
 
-
-def frames(input_file, output_prefix):
+def frames(input_file, output_prefix, frame_rate=1):
     """Extract the frames of the video.
     Export frames as images at output_prefix as a 7 digit padded jpeg file.
     """
-    command = "ffmpeg -i {input_file} -r 1 {output_prefix}_%07d.jpeg".format(
-        input_file=input_file, output_prefix=output_prefix
+    command = "ffmpeg -i {input_file} -r {frame_rate} {output_prefix}_%07d.jpeg".format(
+        input_file=input_file, frame_rate=frame_rate output_prefix=output_prefix
     )
     process = Popen(command.split(), stdout=DEVNULL, stderr=STDOUT)
     output, error = process.communicate()
@@ -162,8 +161,8 @@ def compressor(input_file, task_dir, task_uid):
     # command = 'ffmpeg -ss {start} -t {time} -i {input_file} -an -vf scale=512:-1 -preset ultrafast {output_file}'.format(
 
     output_file = join(task_dir, task_uid + "compressed.mp4")
-    command = "ffmpeg -i {input_file} -s 512x512 -r 30 -an -preset ultrafast {output_file}".format(
-        input_file=input_file, output_file=output_file
+    command = "ffmpeg -i {input_file} -s 512x512 -r {frame_rate} -an -preset ultrafast {output_file}".format(
+        input_file=input_file, frame_rate=frame_rate, output_file=output_file
     )
     process = Popen(command.split(), stdout=DEVNULL, stderr=STDOUT)
     output, error = process.communicate()
@@ -171,7 +170,7 @@ def compressor(input_file, task_dir, task_uid):
     return output_file
 
 
-def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=None):
+def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=None, collage=True):
     """
     calculate videohash of file at absolute path input_file.
     from_url relies upon this function to do the main job after downloading
@@ -197,7 +196,7 @@ def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=Non
     # speed.
     # input_file = compressor(input_file, task_dir, task_uid)
 
-    frames(input_file, image_prefix)
+    frames(input_file, image_prefix, frame_rate=1)
     collage_maker(image_dir, task_dir, 800)
     collage = join(task_dir, "collage.jpeg")
     _hash = hash_manager(collage, image_hash=image_hash, hash_size=hash_size)
