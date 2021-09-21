@@ -174,7 +174,7 @@ def from_url(root_dir, input_url, image_hash=None, hash_size=None):
     downloaded_file = download(input_url, output_file, task_dir, task_uid)
     input_file = join(task_dir, downloaded_file)
     return from_path(
-        input_file, task_uid=task_uid, task_dir=task_dir, image_hash=image_hash, hash_size=hash_size
+        root_dir, input_file, task_uid=task_uid, task_dir=task_dir, image_hash=image_hash, hash_size=hash_size
     )
 
 
