@@ -1,6 +1,9 @@
-from subprocess import Popen, PIPE, DEVNULL, STDOUT
+from subprocess import run, Popen, PIPE, DEVNULL, STDOUT
+import math
+import numpy as np
 import os
 import random
+import re
 from pathlib import Path
 from PIL import Image
 import imagehash
@@ -52,16 +55,18 @@ def download(input_url, output_file, task_dir, task_uid):
         % (process.returncode, output.decode(), error.decode())
     )
 
-def frames(input_file, output_prefix, frame_rate=1):
+def frames(input_file, output_prefix, frame_rate=1, task_uid=None, task_dir=None):
     """Extract the frames of the video.
     Export frames as images at output_prefix as a 7 digit padded jpeg file.
     """
-    command = "ffmpeg -i {input_file} -r {frame_rate} {output_prefix}_%07d.jpeg".format(
+
+    #compressed_file = compressor(input_file, task_dir, task_uid, frame_rate=frame_rate)
+
+    command = "ffmpeg -i \"{input_file}\" -s 512x512 -an -preset ultrafast -crf 0 -r {frame_rate} {output_prefix}_%07d.jpeg".format(
         input_file=input_file, frame_rate=frame_rate, output_prefix=output_prefix
     )
-    process = Popen(command.split(), stdout=DEVNULL, stderr=STDOUT)
-    output, error = process.communicate()
-
+    cp = run(["ffmpeg", "-i", input_file, "-s", "512x512", "-an", "-preset", "ultrafast", "-crf", "0", "-r", str(frame_rate), output_prefix+"%07d.jpeg"], capture_output=True)
+    #print(cp)
 
 def collage_maker(image_dir, task_dir, collage_image_width):
     """Create a collage from the extracted frames, and make sure that the
@@ -99,50 +104,67 @@ def collage_maker(image_dir, task_dir, collage_image_width):
         j += 1
     collage_image.save(join(task_dir, "collage.jpeg"))
 
-def phash(dir):
-    return "HELLO"
+def phash(ipath, method):
+    command = "/Users/allenday/venv/scrobble/bin/phashes -p 3 -m {method} {input_file}".format(
+        method=method, input_file=ipath
+    )
+    cp = run(command.split(), capture_output=True)
+    F = re.split(r'\t', cp.stdout.decode().strip())
+    hh = F[2]
+    n = 8
+    return ''.join(["%02x" % int('0b'+hh[i:i+n],2) for i in range(0, len(hh), n)])
 
-def hash_manager(ipath, image_hash=None, hash_size=None, aggregate=True):
+def hash_manager(ipath, image_hash=[], hash_size=None, aggregate=True):
     """
     Use the imagehash algorithm passed by the client.
     """
 
-    hashes = []
+    hashes = {}
     images = []
     if aggregate:
         images.append(ipath)
     else:
-        images = [f for f in os.listdir(ipath) if os.path.isfile(os.path.join(ipath, f))]
+        images = [f for f in sorted(os.listdir(ipath)) if os.path.isfile(os.path.join(ipath, f))]
 
+    for method in image_hash:
+        hashes[method] = []
     for img in images:
+        i = os.path.join(ipath, img)
         if hash_size == None:
             hash_size = 8
-        if image_hash == "phash":
-            hash = imagehash.phash(Image.open(img), hash_size=hash_size)
-        elif image_hash == "dhash":
-            hash = imagehash.dhash(Image.open(img))
-        elif image_hash == "whash":
-            hash = imagehash.whash(Image.open(img))
-        elif image_hash == "colorhash":
-            hash = imagehash.colorhash(Image.open(img))
-        elif image_hash == "crop_resistant_hash":
-            hash = imagehash.crop_resistant_hash(Image.open(img))
-        elif image_hash == "bmh":
-            hash = phash(img, "bmh", dir)
-        elif image_hash == "bdh":
-            hash = phash(img, "bdh", dir)
-        elif image_hash == "avh":
-            hash = phash(img, "avh", dir)
-        elif image_hash == "pfh":
-            hash = phash(img, "pfh", dir)
-        else:
-            hash = imagehash.average_hash(Image.open(img))
-        hashes.append(hash)
 
-    if aggregate:
-        return hashes[0]
-    else:
-        return hashes
+        if 'phash' in image_hash:
+            hash = imagehash.phash(Image.open(i), hash_size=hash_size)
+            hashes['phash'].append(str(hash))
+        if 'dhash' in image_hash:
+            hash = imagehash.dhash(Image.open(i))
+            hashes['dhash'].append(str(hash))
+        if 'whash' in image_hash:
+            hash = imagehash.whash(Image.open(i))
+            hashes['whash'].append(str(hash))
+        if 'colorhash' in image_hash:
+            hash = imagehash.colorhash(Image.open(i))
+            hashes['colorhash'].append(str(hash))
+        if 'crop_resistant_hash' in image_hash:
+            hash = imagehash.crop_resistant_hash(Image.open(i))
+            hashes['crop_resistant_hash'].append(str(hash))
+        if 'average_hash' in image_hash:
+            hash = imagehash.average_hash(Image.open(i))
+            hashes['average_hash'].append(str(hash))
+        if 'bmh' in image_hash:
+            hash = phash(i, "bmh")
+            hashes['bmh'].append(hash)
+        if 'bdh' in image_hash:
+            hash = phash(i, "bdh")
+            hashes['bdh'].append(hash)
+        if 'avh' in image_hash:
+            hash = phash(i, "avh")
+            hashes['avh'].append(hash)
+        if 'pfh' in image_hash:
+            hash = phash(i, "pfh")
+            hashes['pfh'].append(hash)
+
+    return hashes
 
 
 def task_uid_dir(root_dir):
@@ -178,21 +200,22 @@ def from_url(root_dir, input_url, image_hash=None, hash_size=None):
     )
 
 
-def compressor(input_file, task_dir, task_uid):
+def compressor(input_file, task_dir, task_uid, frame_rate=1):
     # APPLY : ffmpeg -i input.webm -s 64x64 -r 30  output.mp4
-    # command = 'ffmpeg -ss {start} -t {time} -i {input_file} -an -vf scale=512:-1 -preset ultrafast {output_file}'.format(
+    # command = 'ffmpeg -ss {start} -t {time} -i {input_file} -an -vf scale=512:-1 -preset superfast -crf 0 {output_file}'.format(
 
     output_file = join(task_dir, task_uid + "compressed.mp4")
-    command = "ffmpeg -i {input_file} -s 512x512 -r {frame_rate} -an -preset ultrafast {output_file}".format(
+    command = "ffmpeg -i '{input_file}' -c:v libx264 -s 512x512 -r {frame_rate} -an -preset ultrafast -crf 0 {output_file}".format(
         input_file=input_file, frame_rate=frame_rate, output_file=output_file
     )
+    print(command)
     process = Popen(command.split(), stdout=DEVNULL, stderr=STDOUT)
     output, error = process.communicate()
 
     return output_file
 
 
-def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=None, aggregate=True):
+def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=None, hash_size=None, aggregate=True, frame_rate=1):
     """
     calculate videohash of file at absolute path input_file.
     from_url relies upon this function to do the main job after downloading
@@ -201,9 +224,9 @@ def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=Non
     Delete the tempfile after we are done.
     """
 
-    if not Path(input_file).is_file():
+    if aggregate == True and not Path(input_file).is_file():
         raise FileNotFoundError(
-            "Can't find your file on this path.\nMake sure you are using an absolute path."
+            "Can't find your file '{f}' on this path.\nMake sure you are using an absolute path.".format(f=input_file)
         )
 
     if not task_uid or not task_dir:
@@ -218,10 +241,10 @@ def from_path(root_dir, input_file, task_uid=None, task_dir=None, image_hash=Non
     # speed.
     # input_file = compressor(input_file, task_dir, task_uid)
 
-    frames(input_file, image_prefix, frame_rate=1)
+    frames(input_file, image_prefix, frame_rate=frame_rate, task_uid=task_uid, task_dir=task_dir)
 
-    collage_maker(image_dir, task_dir, 800)
     if aggregate:
+        collage_maker(image_dir, task_dir, 800)
         collage = join(task_dir, "collage.jpeg")
         _hash = hash_manager(collage, image_hash=image_hash, hash_size=hash_size, aggregate=aggregate)
     else:
