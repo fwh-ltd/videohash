@@ -1,3 +1,5 @@
 ImageHash
 Pillow
+ffmpeg-python
+numpy
 youtube_dl
